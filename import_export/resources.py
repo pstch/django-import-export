@@ -144,16 +144,21 @@ class ResourceOptions(object):
 class DeclarativeMetaclass(type):
 
     def __new__(cls, name, bases, attrs):
-        declared_fields = []
+        _field_list = []
 
+        # Move the fields (Resource attributes) to the ``fields`` attribute
+
+        # FIXME: not sure that .copy() is needed in Py3K
         for field_name, obj in attrs.copy().items():
             if isinstance(obj, Field):
                 field = attrs.pop(field_name)
                 if not field.column_name:
                     field.column_name = field_name
-                declared_fields.append((field_name, field))
+                _field_list.append((field_name, field))
 
-        attrs['fields'] = SortedDict(declared_fields)
+        attrs['fields'] = SortedDict(_field_list)
+        del _field_list
+
         new_class = super(DeclarativeMetaclass, cls).__new__(
             cls, name,
             bases, attrs

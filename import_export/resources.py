@@ -447,13 +447,15 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
         return headers
 
     def export(self, queryset=None):
+        """Exports a resource. Can take a queryset argument to export
+        specifically that queryset.
+
         """
-        Exports a resource.
-        """
+        # TODO: Shouldn't that be done OUTSIDE the Resource ?
         if queryset is None:
+            # no explicit queryset, get the queryset for all objects
             queryset = self.get_queryset()
-        headers = self.get_export_headers()
-        data = tablib.Dataset(headers=headers)
+        data = tablib.Dataset(headers=self.get_export_headers())
         # Iterate without the queryset cache, to avoid wasting memory when
         # exporting large datasets.
         for obj in queryset.iterator():

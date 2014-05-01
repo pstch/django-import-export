@@ -53,10 +53,8 @@ FIELD_WIDGET_MAPPINGS = {
     BOOLEAN_FIELDS: widgets.BooleanWidget
 }
 
-
 class ResourceOptions(object):
-    """
-    The inner Meta class allows for class-level configuration of how the
+    """The inner Meta class allows for class-level configuration of how the
     Resource should behave. The following options are available:
 
     * ``fields`` - Controls what introspected fields the Resource
@@ -82,8 +80,8 @@ class ResourceOptions(object):
       transactions. Default value is ``None`` meaning
       ``settings.IMPORT_EXPORT_USE_TRANSACTIONS`` will be evaluated.
 
-    * ``skip_unchanged`` - Controls if the import should skip unchanged records.
-      Default value is False
+    * ``skip_unchanged`` - Controls if the import should skip
+      unchanged records.  Default value is False
 
     * ``report_skipped`` - Controls if the result reports skipped rows
       Default value is True
@@ -124,8 +122,10 @@ class DeclarativeMetaclass(type):
                 declared_fields.append((field_name, field))
 
         attrs['fields'] = SortedDict(declared_fields)
-        new_class = super(DeclarativeMetaclass, cls).__new__(cls, name,
-                bases, attrs)
+        new_class = super(DeclarativeMetaclass, cls).__new__(
+            cls, name,
+            bases, attrs
+        )
         opts = getattr(new_class, 'Meta', None)
         new_class._meta = ResourceOptions(opts)
 
@@ -245,11 +245,12 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
         return False
 
     def skip_row(self, instance, original):
-        """
-        Returns ``True`` if ``row`` importing should be skipped.
+        """Returns ``True`` if ``row`` importing should be skipped.
 
-        Default implementation returns ``False`` unless skip_unchanged == True.
-        Override this method to handle skipping rows meeting certain conditions.
+        Default implementation returns ``False`` unless skip_unchanged
+        == True.  Override this method to handle skipping rows meeting
+        certain conditions.
+
         """
         if not self._meta.skip_unchanged:
             return False

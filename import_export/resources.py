@@ -443,8 +443,7 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
     def get_export_headers(self):
         # FIXME: Rename to get_headers (this is NOT export-specific)
         # (and add retro-compat function)
-        headers = [field.column_name for field in self.get_fields()]
-        return headers
+        return [force_text(field.column_name) for field in self.get_fields()]
 
     def export(self, queryset=None):
         """Exports a resource. Can take a queryset argument to export

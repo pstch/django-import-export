@@ -53,6 +53,38 @@ FIELD_WIDGET_MAPPINGS = {
     BOOLEAN_FIELDS: widgets.BooleanWidget
 }
 
+
+def _field_name_follows_rel(name):
+    """Used to know if a field name follows a relationship (contains '__')
+
+    """
+    return '__' in name
+
+
+def _get_field_by_name(field_name, model):
+    """Uses a Django internal function get a field by its name
+
+    See http://bit.ly/1iLX0BY
+    """
+    return model._meta.get_field_by_name(field_name)[0]
+
+
+def _get_relationship_target_field(field_name, model):
+    """Parses a field name, for a field that spans relationships, to get the
+    last field. Takes a field name, and the corresponding model, as
+    argument.
+
+    """
+    rels = field_name.split('__')
+
+    for rel in rels[:-1]:
+        # for each rel in rels that is not the last,
+        # replace model with the relationship target
+        model = _get_field_by_name(rel, model)
+    last = _get_field_by_name(model, rels[-1])
+    return last if not isinstance(last, RelatedObject) else last.field
+
+
 class ResourceOptions(object):
     """The inner Meta class allows for class-level configuration of how the
     Resource should behave. The following options are available:
@@ -420,11 +452,13 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
 
 
 class ModelDeclarativeMetaclass(DeclarativeMetaclass):
-
+    """#TODO: Add docstring"""
     def __new__(cls, name, bases, attrs):
+        """#TODO: Add docstring"""
         new_class = super(ModelDeclarativeMetaclass,
-                cls).__new__(cls, name, bases, attrs)
+                          cls).__new__(cls, name, bases, attrs)
 
+        # TOFIND: What is opts ? ResourceOption ?
         opts = new_class._meta
 
         if not opts.instance_loader_class:
@@ -432,50 +466,71 @@ class ModelDeclarativeMetaclass(DeclarativeMetaclass):
 
         if opts.model:
             model_opts = opts.model._meta
-            declared_fields = new_class.fields
+            # temporary list to store Field objects, before sorting
+            # them and setting them on new_class
+            _field_list = []
 
-            field_list = []
-            for f in sorted(model_opts.fields + model_opts.many_to_many):
-                if opts.fields is not None and not f.name in opts.fields:
+            # TOFIND: Why fields+many_to_many ?
+            # TOFIND: What is model_opts.fields ?
+            for field in sorted(model_opts.fields + model_opts.many_to_many):
+                field_name = field.name
+
+                if opts.fields is not None and field_name not in opts.fields:
+                    # fields explicitly defined, and current field not
+                    # listed : skip
                     continue
-                if opts.exclude and f.name in opts.exclude:
+                if opts.exclude and field_name in opts.exclude:
+                    # exclude list defined, and current field listed : skip
                     continue
-                if f.name in declared_fields:
+                if field_name in new_class.fields:
+                    # already defined : skip
                     continue
 
-                FieldWidget = new_class.widget_from_django_field(f)
-                widget_kwargs = new_class.widget_kwargs_for_field(f.name)
-                field = Field(attribute=f.name, column_name=f.name,
-                        widget=FieldWidget(**widget_kwargs))
-                field_list.append((f.name, field, ))
+                widget_class = new_class.widget_from_django_field(field)
+                widget_kwargs = new_class.widget_kwargs_for_field(field_name)
+                import_field = Field(
+                    attribute=field_name,
+                    column_name=field_name,
+                    widget=widget_class(**widget_kwargs)
+                )
 
-            new_class.fields.update(SortedDict(field_list))
+                _field_list.append((field_name, import_field))
 
-            #add fields that follow relationships
+            new_class.fields.update(SortedDict(_field_list))
+            del _field_list
+
+            # add fields that follow relationships
+            # TOFIND: whats is opts.fields again ? how is it relevant here ?
             if opts.fields is not None:
-                field_list = []
-                for field_name in opts.fields:
-                    if field_name in declared_fields:
+                # temporary list to store Field objects, before sorting
+                # them and setting them on new_class
+                _field_list = []
+                for field_name in filter(_field_name_follows_rel, opts.fields):
+                    if field_name in new_class.fields:
+                        # already defined, either statically, or by
+                        # the precedent loop : skip
                         continue
-                    if field_name.find('__') == -1:
-                        continue
 
-                    model = opts.model
-                    attrs = field_name.split('__')
-                    for attr in attrs[0:-1]:
-                        f = model._meta.get_field_by_name(attr)[0]
-                        model = f.rel.to
-                    f = model._meta.get_field_by_name(attrs[-1])[0]
-                    if isinstance(f, RelatedObject):
-                        f = f.field
+                    field = _get_relationship_target_field(
+                        field_name,
+                        opts.model
+                    )
 
-                    FieldWidget = new_class.widget_from_django_field(f)
-                    widget_kwargs = new_class.widget_kwargs_for_field(field_name)
-                    field = Field(attribute=field_name, column_name=field_name,
-                            widget=FieldWidget(**widget_kwargs), readonly=True)
-                    field_list.append((field_name, field, ))
+                    widget_class = new_class.widget_from_django_field(field)
+                    widget_kwargs = new_class.widget_kwargs_for_field(
+                        field_name
+                    )
+                    import_field = Field(
+                        attribute=field_name,
+                        column_name=field_name,
+                        widget=widget_class(**widget_kwargs),
+                        readonly=True
+                    )
 
-                new_class.fields.update(SortedDict(field_list))
+                    _field_list.append((field_name, field, ))
+
+                new_class.fields.update(SortedDict(_field_list))
+                del _field_list
 
         return new_class
 

@@ -31,6 +31,28 @@ except ImportError:
 
 USE_TRANSACTIONS = getattr(settings, 'IMPORT_EXPORT_USE_TRANSACTIONS', False)
 
+M2M_FIELDS = ('ManyToManyField', )
+FK_FIELDS = ('ForeignKey', 'OneToOneField')
+DECIMAL_FIELDS = ('DecimalField', )
+DATETIME_FIELDS = ('DateTimeField', )
+DATE_FIELDS = ('DateField', )
+INTEGER_FIELDS = ('IntegerField', 'PositiveIntegerField',
+                  'PositiveSmallIntegerField', 'SmallIntegerField',
+                  'AutoField')
+BOOLEAN_FIELDS = ('BooleanField', 'BooleanWidget')
+
+FIELD_WIDGET_MAPPINGS = {
+    M2M_FIELDS: lambda f: functools.partial(widgets.ManyToManyWidget,
+                                            model=f.rel.to),
+    FK_FIELDS: lambda f: functools.partial(widgets.ForeignKeyWidget,
+                                           model=f.rel.to),
+    DECIMAL_FIELDS: widgets.DecimalWidget,
+    DATETIME_FIELDS: widgets.DateTimeWidget,
+    DATE_FIELDS: widgets.DateWidget,
+    INTEGER_FIELDS: widgets.IntegerWidget,
+    BOOLEAN_FIELDS: widgets.BooleanWidget
+}
+
 
 class ResourceOptions(object):
     """
@@ -466,28 +488,25 @@ class ModelResource(six.with_metaclass(ModelDeclarativeMetaclass, Resource)):
     def widget_from_django_field(cls, f, default=widgets.Widget):
         """
         Returns the widget that would likely be associated with each
-        Django type.
+        Django type, accordingly to FIELD_WIDGET_MAPPINGS
         """
-        result = default
         internal_type = f.get_internal_type()
-        if internal_type in ('ManyToManyField', ):
-            result = functools.partial(widgets.ManyToManyWidget,
-                    model=f.rel.to)
-        if internal_type in ('ForeignKey', 'OneToOneField', ):
-            result = functools.partial(widgets.ForeignKeyWidget,
-                    model=f.rel.to)
-        if internal_type in ('DecimalField', ):
-            result = widgets.DecimalWidget
-        if internal_type in ('DateTimeField', ):
-            result = widgets.DateTimeWidget
-        elif internal_type in ('DateField', ):
-            result = widgets.DateWidget
-        elif internal_type in ('IntegerField', 'PositiveIntegerField',
-                'PositiveSmallIntegerField', 'SmallIntegerField', 'AutoField'):
-            result = widgets.IntegerWidget
-        elif internal_type in ('BooleanField', 'NullBooleanField'):
-            result = widgets.BooleanWidget
-        return result
+
+        # FIELD_WIDGET_MAPPINGS is a dictionary contaning a tuple of
+        # internal types as key, and the corresponding widget (or
+        # lambda returning widget, taking field as argument) as values
+        for internal_types, widget in FIELD_WIDGET_MAPPINGS.items():
+            if internal_type in internal_types:
+                if isinstance(widget, widgets.Widget):
+                    # Not a lambda function, return directly
+                    return widget
+                else:
+                    # Lambda function, call with field as arg. Needed
+                    # for widget such as ForeignKeyWidget or
+                    # ManyToManyWidget
+                    return widget(f)
+
+        return default
 
     @classmethod
     def widget_kwargs_for_field(self, field_name):

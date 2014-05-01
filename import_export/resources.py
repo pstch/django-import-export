@@ -480,8 +480,13 @@ class ModelDeclarativeMetaclass(DeclarativeMetaclass):
 
 
 class ModelResource(six.with_metaclass(ModelDeclarativeMetaclass, Resource)):
-    """
-    ModelResource is Resource subclass for handling Django models.
+    """ModelResource is Resource subclass for handling Django models.
+
+    It allows us to get the corresponding Widget for Django fields,
+retrieves the data defined in the Resource Meta class
+(ResourceOptions), provides the model queryset and a function to
+initialize a model instance.
+
     """
 
     @classmethod
@@ -510,8 +515,9 @@ class ModelResource(six.with_metaclass(ModelDeclarativeMetaclass, Resource)):
 
     @classmethod
     def widget_kwargs_for_field(self, field_name):
-        """
-        Returns widget kwargs for given field_name.
+        """Returns widget kwargs (defined in Meta options) for given
+        field_name.
+
         """
         if self._meta.widgets:
             return self._meta.widgets.get(field_name, {})
@@ -533,8 +539,9 @@ class ModelResource(six.with_metaclass(ModelDeclarativeMetaclass, Resource)):
 
 
 def modelresource_factory(model, resource_class=ModelResource):
-    """
-    Factory for creating ``ModelResource`` class for given Django model.
+    """Factory for creating ``ModelResource`` class for given Django
+    model.
+
     """
     attrs = {'model': model}
     Meta = type(str('Meta'), (object,), attrs)

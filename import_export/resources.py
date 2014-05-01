@@ -420,19 +420,29 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
         return result
 
     def get_export_order(self):
+        # TODO: Docstring
         return self._meta.export_order or self.fields.keys()
 
     def export_field(self, field, obj):
+        # TODO: Docstring
         field_name = self.get_field_name(field)
+        # TOFIND: WTF is dehydrate ?
         method = getattr(self, 'dehydrate_%s' % field_name, None)
         if method is not None:
             return method(obj)
         return field.export(obj)
 
     def export_resource(self, obj):
+        # TODO: Docstring
+
+        # FIXME: Function name seems misleading. We are ALREADY in the
+        # Resource class, Resource.export_resource is
+        # weird/redundant/wrong.
         return [self.export_field(field, obj) for field in self.get_fields()]
 
     def get_export_headers(self):
+        # FIXME: Rename to get_headers (this is NOT export-specific)
+        # (and add retro-compat function)
         headers = [field.column_name for field in self.get_fields()]
         return headers
 

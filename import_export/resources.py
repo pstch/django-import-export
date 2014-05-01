@@ -518,12 +518,17 @@ class ModelResource(six.with_metaclass(ModelDeclarativeMetaclass, Resource)):
         return {}
 
     def get_import_id_fields(self):
+        """Returns import identification fields (defined in Meta options)
+
+        """
         return self._meta.import_id_fields
 
     def get_queryset(self):
+        """Returns model queryset (model defined in Meta options)"""
         return self._meta.model.objects.all()
 
     def init_instance(self, row=None):
+        """Initialize a model instance (model defined in Meta options)"""
         return self._meta.model()
 
 

@@ -614,14 +614,15 @@ def modelresource_factory(model, resource_class=ModelResource):
     model.
 
     """
-    attrs = {'model': model}
-    Meta = type(str('Meta'), (object,), attrs)
+    resource_metaclass = type(
+        str('Meta'),
+        (object,),
+        {'model': model}
+    )
+    class_name = "%s%s" % (model.__name__, str('Resource'))
 
-    class_name = model.__name__ + str('Resource')
-
-    class_attrs = {
-        'Meta': Meta,
-        }
-
-    metaclass = ModelDeclarativeMetaclass
-    return metaclass(class_name, (resource_class,), class_attrs)
+    return ModelDeclarativeMetaclass(
+        class_name,
+        (resource_class,),
+        {'Meta': resource_metaclass}
+    )

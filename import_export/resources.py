@@ -177,6 +177,9 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
     """
 
     def get_use_transactions(self):
+        """
+        #TODO: Add docstring
+        """
         if self._meta.use_transactions is None:
             return USE_TRANSACTIONS
         else:
@@ -200,12 +203,21 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
             field, cls))
 
     def init_instance(self, row=None):
+        """
+        #TODO: Add docstring
+        """
         raise NotImplementedError()
 
     def get_instance(self, instance_loader, row):
+        """
+        #TODO: Add docstring
+        """
         return instance_loader.get_instance(row)
 
     def get_or_init_instance(self, instance_loader, row):
+        """
+        #TODO: Add docstring
+        """
         instance = self.get_instance(instance_loader, row)
         if instance:
             return (instance, False)
@@ -213,6 +225,9 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
             return (self.init_instance(row), True)
 
     def save_instance(self, instance, dry_run=False):
+        """
+        #TODO: Add docstring
+        """
         self.before_save_instance(instance, dry_run)
         if not dry_run:
             instance.save()
@@ -231,6 +246,9 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
         pass
 
     def delete_instance(self, instance, dry_run=False):
+        """
+        #TODO: Add docstring
+        """
         self.before_delete_instance(instance, dry_run)
         if not dry_run:
             instance.delete()
@@ -249,6 +267,9 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
         pass
 
     def import_field(self, field, obj, data):
+        """
+        #TODO: Add docstring
+        """
         if field.attribute and field.column_name in data:
             field.save(obj, data)
 

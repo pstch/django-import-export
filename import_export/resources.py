@@ -474,6 +474,19 @@ class ModelDeclarativeMetaclass(DeclarativeMetaclass):
         new_class = super(ModelDeclarativeMetaclass,
                           cls).__new__(cls, name, bases, attrs)
 
+        def parse_field(field, field_name=None):
+            if field_name is None:
+                field_name = field.name
+
+            widget_class = new_class.widget_from_django_field(field)
+            widget_kwargs = new_class.widget_kwargs_for_field(field_name)
+
+            return Field(
+                attribute=field_name,
+                column_name=field_name,
+                widget=widget_class(**widget_kwargs)
+            )
+
         # TOFIND: What is opts ? ResourceOption ?
         opts = new_class._meta
 
@@ -484,69 +497,60 @@ class ModelDeclarativeMetaclass(DeclarativeMetaclass):
             model_opts = opts.model._meta
             # temporary list to store Field objects, before sorting
             # them and setting them on new_class
-            _field_list = []
 
             # TOFIND: Why fields+many_to_many ?
             # TOFIND: What is model_opts.fields ?
-            for field in sorted(model_opts.fields + model_opts.many_to_many):
-                field_name = field.name
-
-                if opts.fields is not None and field_name not in opts.fields:
-                    # fields explicitly defined, and current field not
-                    # listed : skip
-                    continue
-                if opts.exclude and field_name in opts.exclude:
-                    # exclude list defined, and current field listed : skip
-                    continue
-                if field_name in new_class.fields:
-                    # already defined : skip
-                    continue
-
-                widget_class = new_class.widget_from_django_field(field)
-                widget_kwargs = new_class.widget_kwargs_for_field(field_name)
-                import_field = Field(
-                    attribute=field_name,
-                    column_name=field_name,
-                    widget=widget_class(**widget_kwargs)
+            new_class.fields.update(SortedDict(
+                (
+                    (
+                        field.name,
+                        parse_field(field)
+                    )
+                    for field in sorted(
+                            model_opts.fields +
+                            model_opts.many_to_many
+                    ) if
+                    (
+                        (
+                            opts.fields is None or
+                            field.name in opts.fields
+                        )
+                        and
+                        (
+                            opts.exclude is None or
+                            field.name not in opts.exclude
+                        )
+                        and
+                        (
+                            field.name not in new_class.fields
+                        )
+                    )
                 )
-
-                _field_list.append((field_name, import_field))
-
-            new_class.fields.update(SortedDict(_field_list))
-            del _field_list
-
+            ))
             # add fields that follow relationships
             # TOFIND: whats is opts.fields again ? how is it relevant here ?
             if opts.fields is not None:
                 # temporary list to store Field objects, before sorting
                 # them and setting them on new_class
-                _field_list = []
-                for field_name in filter(_field_name_follows_rel, opts.fields):
-                    if field_name in new_class.fields:
-                        # already defined, either statically, or by
-                        # the precedent loop : skip
-                        continue
-
-                    field = _get_relationship_target_field(
-                        field_name,
-                        opts.model
+                new_class.fields.update(SortedDict(
+                    (
+                        (
+                            field_name,
+                            parse_field(
+                                _get_relationship_target_field(
+                                    field_name,
+                                    opts.model
+                                ),
+                                field_name
+                            )
+                        )
+                        for field_name in opts.fields if
+                        (
+                            field_name not in new_class.fields and
+                            _field_name_follows_rel(field_name)
+                        )
                     )
-
-                    widget_class = new_class.widget_from_django_field(field)
-                    widget_kwargs = new_class.widget_kwargs_for_field(
-                        field_name
-                    )
-                    import_field = Field(
-                        attribute=field_name,
-                        column_name=field_name,
-                        widget=widget_class(**widget_kwargs),
-                        readonly=True
-                    )
-
-                    _field_list.append((field_name, import_field, ))
-
-                new_class.fields.update(SortedDict(_field_list))
-                del _field_list
+                ))
 
         return new_class
 

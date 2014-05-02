@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import functools
 from copy import deepcopy
+from warnings import warn
 import sys
 import traceback
 
@@ -428,6 +429,12 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
         # TODO: Docstring
         return self._meta.column_order or self.fields.keys()
 
+    def get_export_order(self):
+        # TODO: Docstring
+        warn("get_export_order() is deprecated, please use get_column_order()",
+             DeprecationWarning)
+        return self.get_column_order()
+
     def export_field(self, field, obj):
         # TODO: Docstring
         field_name = self.get_field_name(field)
@@ -437,18 +444,26 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
             return method(obj)
         return field.export(obj)
 
-    def export_resource(self, obj):
+    def export_instance(self, obj):
         # TODO: Docstring
-
-        # FIXME: Function name seems misleading. We are ALREADY in the
-        # Resource class, Resource.export_resource is
-        # weird/redundant/wrong.
         return [self.export_field(field, obj) for field in self.get_fields()]
 
+    def export_resource(self, obj):
+        # TODO: Docstring
+        warn("export_resource() is deprecated, please use export_instance()",
+             DeprecationWarning)
+        return self.export_instance(obj)
+
     def get_column_headers(self):
-        # FIXME: Rename to get_headers (this is NOT export-specific)
-        # (and add retro-compat function)
+        # TODO: Docstring
         return [force_text(field.column_name) for field in self.get_fields()]
+
+    def get_export_headers(self):
+        # TODO: Docstring
+        warn("get_export_headers() is deprecated, please "
+            " use get_column_headers()",
+             DeprecationWarning)
+        return self.get_column_headers()
 
     def export(self, queryset=None):
         """Exports a resource. Can take a queryset argument to export
@@ -463,7 +478,7 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
         # Iterate without the queryset cache, to avoid wasting memory when
         # exporting large datasets.
         for obj in queryset.iterator():
-            data.append(self.export_resource(obj))
+            data.append(self.export_instance(obj))
         return data
 
 

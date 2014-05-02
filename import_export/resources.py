@@ -335,8 +335,9 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
         """
         pass
 
-    def import_data(self, dataset, dry_run=False, raise_errors=False,
-            use_transactions=None):
+    def import_data(self,
+                    dataset, dry_run=False,
+                    raise_errors=False, use_transactions=None):
         """
         Imports data from ``dataset``.
 
@@ -385,13 +386,19 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
                 if self.for_delete(row, instance):
                     if new:
                         row_result.import_type = RowResult.IMPORT_TYPE_SKIP
-                        row_result.diff = self.get_diff(None, None,
-                                real_dry_run)
+                        row_result.diff = self.get_diff(
+                            None,
+                            None,
+                            real_dry_run
+                        )
                     else:
                         row_result.import_type = RowResult.IMPORT_TYPE_DELETE
                         self.delete_instance(instance, real_dry_run)
-                        row_result.diff = self.get_diff(original, None,
-                                real_dry_run)
+                        row_result.diff = self.get_diff(
+                            original,
+                            None,
+                            real_dry_run
+                        )
                 else:
                     self.import_obj(instance, row, real_dry_run)
                     if self.skip_row(instance, original):
@@ -402,8 +409,11 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
                         # Add object info to RowResult for LogEntry
                         row_result.object_repr = str(instance)
                         row_result.object_id = instance.pk
-                    row_result.diff = self.get_diff(original, instance,
-                            real_dry_run)
+                    row_result.diff = self.get_diff(
+                        original,
+                        instance,
+                        real_dry_run
+                    )
             except Exception as e:
                 tb_info = traceback.format_exc(2)
                 row_result.errors.append(Error(e, tb_info))
@@ -412,8 +422,9 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
                         transaction.rollback()
                         transaction.leave_transaction_management()
                     six.reraise(*sys.exc_info())
-            if (row_result.import_type != RowResult.IMPORT_TYPE_SKIP or
-                        self._meta.report_skipped):
+
+            if row_result.import_type is not RowResult.IMPORT_TYPE_SKIP or \
+               self._meta.report_skipped:
                 result.rows.append(row_result)
 
         if use_transactions:

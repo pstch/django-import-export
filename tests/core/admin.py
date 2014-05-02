@@ -4,7 +4,7 @@ from django.contrib import admin
 
 from import_export.admin import ImportExportMixin
 
-from .models import Book, Category, Author
+from tests.core.models import Book, Category, Author
 
 
 class BookAdmin(ImportExportMixin, admin.ModelAdmin):

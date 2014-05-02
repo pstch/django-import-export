@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.admin.models import LogEntry
 
-from core.admin import BookAdmin
+from tests.core.admin import BookAdmin
 
 
 class ImportExportAdminIntegrationTest(TestCase):

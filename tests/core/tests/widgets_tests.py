@@ -7,7 +7,7 @@ from django.test import TestCase
 
 from import_export import widgets
 
-from core.models import (
+from tests.core.models import (
         Author,
         Category,
         )

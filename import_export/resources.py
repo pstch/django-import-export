@@ -572,7 +572,8 @@ class ModelDeclarativeMetaclass(DeclarativeMetaclass):
                                 )
                             )
                             # iterate through ModelResource metaclass fields
-                            for field_name in opts.fields if (
+                            for field_name in opts.fields if
+                            (
                                 # check that field name is not defined
                                 # either by the Model's metaclass or
                                 # as attribute/property in the ModelResource

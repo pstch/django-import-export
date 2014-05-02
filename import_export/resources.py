@@ -543,7 +543,7 @@ class ModelDeclarativeMetaclass(DeclarativeMetaclass):
                         readonly=True
                     )
 
-                    _field_list.append((field_name, field, ))
+                    _field_list.append((field_name, import_field, ))
 
                 new_class.fields.update(SortedDict(_field_list))
                 del _field_list

@@ -33,5 +33,8 @@ setup(
     packages=find_packages(exclude=["tests"]),
     include_package_data=True,
     install_requires=install_requires,
+
     classifiers=CLASSIFIERS,
+
+    test_suite='runtests.runtests',
 )

@@ -104,7 +104,7 @@ class ResourceOptions(object):
     * ``import_id_fields`` - Controls which object fields will be used to
       identify existing instances.
 
-    * ``export_order`` - Controls export order for columns.
+    * ``column_order`` - Controls order for columns.
 
     * ``widgets`` - dictionary defines widget kwargs for fields.
 
@@ -124,7 +124,7 @@ class ResourceOptions(object):
     exclude = None
     instance_loader_class = None
     import_id_fields = ['id']
-    export_order = None
+    column_order = None
     widgets = None
     use_transactions = None
     skip_unchanged = False
@@ -183,9 +183,9 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
 
     def get_fields(self):
         """
-        Returns fields in ``export_order`` order.
+        Returns fields in ``column_order`` order.
         """
-        return [self.fields[f] for f in self.get_export_order()]
+        return [self.fields[f] for f in self.get_column_order()]
 
     @classmethod
     def get_field_name(cls, field):
@@ -326,7 +326,7 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
         """
         Diff representation headers.
         """
-        return self.get_export_headers()
+        return self.get_column_headers()
 
     def before_import(self, dataset, dry_run):
         """
@@ -424,9 +424,9 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
 
         return result
 
-    def get_export_order(self):
+    def get_column_order(self):
         # TODO: Docstring
-        return self._meta.export_order or self.fields.keys()
+        return self._meta.column_order or self.fields.keys()
 
     def export_field(self, field, obj):
         # TODO: Docstring
@@ -445,7 +445,7 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
         # weird/redundant/wrong.
         return [self.export_field(field, obj) for field in self.get_fields()]
 
-    def get_export_headers(self):
+    def get_column_headers(self):
         # FIXME: Rename to get_headers (this is NOT export-specific)
         # (and add retro-compat function)
         return [force_text(field.column_name) for field in self.get_fields()]
@@ -459,7 +459,7 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
         if queryset is None:
             # no explicit queryset, get the queryset for all objects
             queryset = self.get_queryset()
-        data = tablib.Dataset(headers=self.get_export_headers())
+        data = tablib.Dataset(headers=self.get_column_headers())
         # Iterate without the queryset cache, to avoid wasting memory when
         # exporting large datasets.
         for obj in queryset.iterator():

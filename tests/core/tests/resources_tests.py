@@ -33,7 +33,7 @@ class MyResource(resources.Resource):
     email = fields.Field()
 
     class Meta:
-        export_order = ('email', 'name')
+        column_order = ('email', 'name')
 
 
 class ResourceTestCase(TestCase):
@@ -53,8 +53,8 @@ class ResourceTestCase(TestCase):
         self.assertIsInstance(self.my_resource._meta,
                 resources.ResourceOptions)
 
-    def test_get_export_order(self):
-        self.assertEqual(self.my_resource.get_export_headers(),
+    def test_get_column_order(self):
+        self.assertEqual(self.my_resource.get_column_headers(),
                 ['email', 'name'])
 
 
@@ -113,8 +113,8 @@ class ModelResourceTest(TestCase):
                 self.dataset.dict[0])
         self.assertEqual(instance, self.book)
 
-    def test_get_export_headers(self):
-        headers = self.resource.get_export_headers()
+    def test_get_column_headers(self):
+        headers = self.resource.get_column_headers()
         self.assertEqual(headers, ['published_date',
             'id', 'name', 'author', 'author_email', 'price', 'categories',
             ])
@@ -126,7 +126,7 @@ class ModelResourceTest(TestCase):
     def test_get_diff(self):
         book2 = Book(name="Some other book")
         diff = self.resource.get_diff(self.book, book2)
-        headers = self.resource.get_export_headers()
+        headers = self.resource.get_column_headers()
         self.assertEqual(diff[headers.index('name')],
                 u'<span>Some </span><ins style="background:#e6ffe6;">'
                 u'other </ins><span>book</span>')

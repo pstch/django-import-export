@@ -275,11 +275,13 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
 
     def import_obj(self, obj, data, dry_run):
         """
+        #TODO: Add docstring
         """
-        for field in self.get_fields():
-            if isinstance(field.widget, widgets.ManyToManyWidget):
-                continue
+        [
             self.import_field(field, obj, data)
+            for field in self.get_fields()
+            if not isinstance(field.widget, widgets.ManyToManyWidget)
+        ]
 
     def save_m2m(self, obj, data, dry_run):
         """
@@ -289,10 +291,11 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
         a many-to-many relationship can be used.
         """
         if not dry_run:
-            for field in self.get_fields():
-                if not isinstance(field.widget, widgets.ManyToManyWidget):
-                    continue
+            [
                 self.import_field(field, obj, data)
+                for field in self.get_fields()
+                if isinstance(field.widget, widgets.ManyToManyWidget)
+            ]
 
     def for_delete(self, row, instance):
         """

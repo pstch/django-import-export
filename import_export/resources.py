@@ -553,7 +553,7 @@ class ModelDeclarativeMetaclass(DeclarativeMetaclass):
             #
             # Will not override fields that we got from the model
             # metaclass (model_opts.fields and model_opts.many_to_many).
-            if opts.fields:
+            if opts.fields is not None:
                 new_class.fields.update(
                     SortedDict(
                         (

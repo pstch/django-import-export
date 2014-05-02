@@ -80,8 +80,8 @@ def _get_relationship_target_field(field_name, model):
     for rel in rels[:-1]:
         # for each rel in rels that is not the last,
         # replace model with the relationship target
-        model = _get_field_by_name(rel, model)
-    last = _get_field_by_name(model, rels[-1])
+        model = _get_field_by_name(rel, model).rel.to
+    last = _get_field_by_name(rels[-1], model)
     return last if not isinstance(last, RelatedObject) else last.field
 
 

@@ -495,6 +495,7 @@ class ModelDeclarativeMetaclass(DeclarativeMetaclass):
             widget_kwargs = new_class.widget_kwargs_for_field(
                 field_name
             )
+            print("made a %s widget for %s, using %s, and kwargs %s" % (widget_class, field_name, field_name, widget_kwargs))
             return Field(
                 attribute=field_name,
                 column_name=field_name,
@@ -564,7 +565,8 @@ class ModelDeclarativeMetaclass(DeclarativeMetaclass):
                                 # relationship-spanning field name
                                 parse_field(
                                     _get_relationship_target_field(
-                                        field_name
+                                        field_name,
+                                        opts.model
                                     ),
                                     field_name
                                 )

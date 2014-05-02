@@ -579,7 +579,7 @@ class ModelDeclarativeMetaclass(DeclarativeMetaclass):
                                 # check that the field name actually spans
                                 # relationships
                                 _field_name_follows_rel(field_name)
-                            )n
+                            )
                         )
                     )
                 )

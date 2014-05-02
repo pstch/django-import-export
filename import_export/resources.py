@@ -574,7 +574,8 @@ initialize a model instance.
         # lambda returning widget, taking field as argument) as values
         for internal_types, widget in FIELD_WIDGET_MAPPINGS.items():
             if internal_type in internal_types:
-                if isinstance(widget, widgets.Widget):
+                if isinstance(widget, type) and \
+                   issubclass(widget, widgets.Widget):
                     # Not a lambda function, return directly
                     return widget
                 else:

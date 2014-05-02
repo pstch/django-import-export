@@ -303,6 +303,30 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
                     return False
         return True
 
+    def get_field_diff(self, dmp_instance,
+                       field, original, current,
+                       dry_run=False):
+        """
+        ``dry_run`` allows handling special cases when object is not saved
+        to database (ie. m2m relationships).
+        """
+        original = self.export_field(field, original) if original else ""
+        current = self.export_field(field, current) if current else ""
+
+        diff = dmp_instance.diff_main(
+            force_text(original),
+            force_text(current)
+        )
+        # we assume the field contains human-readable content (see
+        # diff_match_patch docs)
+        dmp_instance.diff_cleanupSemantic(diff)
+
+        # TODO: implement own diff_prettyHtml : "This function is
+        # mainly intended as an example from which to write ones own
+        # display functions."
+        # https://code.google.com/p/google-diff-match-patch/wiki/API
+        return dmp_instance.diff_prettyHtml(diff)
+
     def get_diff(self, original, current, dry_run=False):
         """
         Get diff between original and current object when ``import_data``
@@ -311,17 +335,20 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
         ``dry_run`` allows handling special cases when object is not saved
         to database (ie. m2m relationships).
         """
-        data = []
-        dmp = diff_match_patch()
-        for field in self.get_fields():
-            v1 = self.export_field(field, original) if original else ""
-            v2 = self.export_field(field, current) if current else ""
-            diff = dmp.diff_main(force_text(v1), force_text(v2))
-            dmp.diff_cleanupSemantic(diff)
-            html = dmp.diff_prettyHtml(diff)
-            html = mark_safe(html)
-            data.append(html)
-        return data
+        # https://code.google.com/p/google-diff-match-patch/wiki/API
+        dmp_instance = diff_match_patch()
+
+        return [
+            # we have to use mark_safe is the diff contains HTML
+            # markup (which is bad)
+            mark_safe(self.get_field_diff(
+                dmp_instance,
+                field,
+                original,
+                current,
+                dry_run
+            )) for field in self.get_fields()
+        ]
 
     def get_diff_headers(self):
         """

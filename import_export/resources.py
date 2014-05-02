@@ -609,36 +609,32 @@ class ModelDeclarativeMetaclass(DeclarativeMetaclass):
             if opts.fields is not None:
                 # temporary list to store Field objects, before sorting
                 # them and setting them on new_class
-                new_class.fields.update(SortedDict(
+                new_class.fields.update(SortedDict((
                     (
-                        (
-                            # 1st element of item tuples : field name
-                            field_name,
-                            # 2nd element of item tuples : import
-                            # field, from the last relationship in the
-                            # relationship-spanning field name
-                            parse_field(
-                                _get_relationship_target_field(
-                                    field_name,
-                                    opts.model
-                                ),
-                                field_name
-                            )
-                        )
-                        # iterate through ModelResource metaclass fields
-                        for field_name in opts.fields if
-                        (
-                            # check that field name is not defined
-                            # either by the Model's metaclass or
-                            # as attribute/property in the ModelResource
-                            # metaclass
-                            field_name not in new_class.fields and
-                            # check that the field name actually spans
-                            # relationships
-                            _field_name_follows_rel(field_name)
+                        # 1st element of item tuples : field name
+                        field_name,
+                        # 2nd element of item tuples : import
+                        # field, from the last relationship in the
+                        # relationship-spanning field name
+                        parse_field(
+                            _get_relationship_target_field(
+                                field_name,
+                                opts.model
+                            ),
+                            field_name
                         )
                     )
-                ))
+                    # iterate through ModelResource metaclass fields
+                    for field_name in opts.fields if
+                    # check that field name is not defined
+                    # either by the Model's metaclass or
+                    # as attribute/property in the ModelResource
+                    # metaclass
+                    field_name not in new_class.fields and
+                    # check that the field name actually spans
+                    # relationships
+                    _field_name_follows_rel(field_name)
+                )))
 
         return new_class
 

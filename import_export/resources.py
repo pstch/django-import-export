@@ -476,7 +476,7 @@ class ModelDeclarativeMetaclass(DeclarativeMetaclass):
         new_class = super(ModelDeclarativeMetaclass,
                           cls).__new__(cls, name, bases, attrs)
 
-        def parse_field(field, field_name):
+        def parse_field(field, field_name=None):
             """Instantiate an import field with a widget and a Django field. Takes a
             Django field and its field_name as argument
 
@@ -484,7 +484,8 @@ class ModelDeclarativeMetaclass(DeclarativeMetaclass):
             cases (fields spanning relationship, for example),
             field_name is different from field.name (in that case,
             contains the full path to the Django field)"""
-
+            if field_name is None:
+                field_name = field.name
             # ModelResources provide a function to get an
             # import widget for each Django field, that we
             # initialize and use to instantiate an import
@@ -563,7 +564,8 @@ class ModelDeclarativeMetaclass(DeclarativeMetaclass):
                             parse_field(
                                 _get_relationship_target_field(
                                     field_name
-                                )
+                                ),
+                                field_name
                             )
                         )
                         # iterate through ModelResource metaclass fields

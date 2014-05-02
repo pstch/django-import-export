@@ -282,7 +282,7 @@ class ExportMixin(object):
             data = resource_class().export(queryset)
             response = HttpResponse(
                 file_format.export_data(data),
-                mimetype='application/octet-stream',
+                content_type='application/octet-stream',
             )
             response['Content-Disposition'] = 'attachment; filename=%s' % (
                 self.get_export_filename(file_format),

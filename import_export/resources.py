@@ -314,13 +314,16 @@ class Resource(six.with_metaclass(DeclarativeMetaclass)):
         certain conditions.
 
         """
+        def get_related_objects(obj):
+            return list(field.get_value(obj).all())
         if not self._meta.skip_unchanged:
             return False
         for field in self.get_fields():
             try:
-                # For fields that are models.fields.related.ManyRelatedManager
+                # For any ManyRelatedManager field
                 # we need to compare the results
-                if list(field.get_value(instance).all()) != list(field.get_value(original).all()):
+                if get_related_objects(instance) != \
+                   get_related_objects(original):
                     return False
             except AttributeError:
                 if field.get_value(instance) != field.get_value(original):
@@ -586,45 +589,38 @@ class ModelDeclarativeMetaclass(DeclarativeMetaclass):
 
             # Update new ModelResource with fields from Django
             # model's metaclass (_meta.fields and _meta.many_to_many)
-            new_class.fields.update(SortedDict(
+            new_class.fields.update(SortedDict((
                 (
-                    (
-                        # 1st element of item tuples: field name
-                        field.name,
-                        # 2nd element of item tuples : import
-                        # field, from the Django field
-                        parse_field(field)
-                    )
-                    for field in sorted(
+                    # 1st element of item tuples: field name
+                    field.name,
+                    # 2nd element of item tuples : import
+                    # field, from the Django field
+                    parse_field(field)
+                )
+                for field in sorted(
                         model_opts.fields +
                         model_opts.many_to_many
-                    ) if
-                    (
-                        (
-                            # check that current field is not
-                            # present in ModelResource fields (if
-                            # defined)
-                            opts.fields is None or
-                            field.name in opts.fields
-                        )
-                        and
-                        (
-                            # check that current field isn't
-                            # excluded by the ModelResource
-                            opts.exclude is None or
-                            field.name not in opts.exclude
-                        )
-                        and
-                        (
-                            # check that current field isn't
-                            # already defined in the new
-                            # ModelResource, by
-                            # DeclarativeMetaclass for example
-                            field.name not in new_class.fields
-                        )
                     )
+                if
+                (
+                    # check that current field is not
+                    # present in ModelResource fields (if
+                    # defined)
+                    opts.fields is None or
+                        field.name in opts.fields
+                ) and (
+                    # check that current field isn't
+                    # excluded by the ModelResource
+                    opts.exclude is None or
+                    field.name not in opts.exclude
+                ) and (
+                    # check that current field isn't
+                    # already defined in the new
+                    # ModelResource, by
+                    # DeclarativeMetaclass for example
+                    field.name not in new_class.fields
                 )
-            ))
+            )))
             # Update new ModelResource with relationship-spanning
             # fields defined in ModelResource Meta options.
             #

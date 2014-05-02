@@ -475,9 +475,20 @@ class ModelDeclarativeMetaclass(DeclarativeMetaclass):
                           cls).__new__(cls, name, bases, attrs)
 
         def parse_field(field, field_name=None):
+            """Instantiate an import field with a widget and a Django field. Takes a
+            Django field and its field_name as argument
+
+            Why is field_name passed as an argument ? Because in some
+            cases (fields spanning relationship, for example),
+            field_name is different from field.name (in that case,
+            contains the full path to the Django field)"""
             if field_name is None:
                 field_name = field.name
-
+            # ModelResources provide a function to get an
+            # import widget for each Django field, that we
+            # initialize and use to instantiate an import
+            # field, appended to the temp field list and set
+            # on ModelResource._meta.fields
             widget_class = new_class.widget_from_django_field(field)
             widget_kwargs = new_class.widget_kwargs_for_field(field_name)
 
@@ -495,47 +506,64 @@ class ModelDeclarativeMetaclass(DeclarativeMetaclass):
 
         if opts.model:
             model_opts = opts.model._meta
-            # temporary list to store Field objects, before sorting
-            # them and setting them on new_class
 
-            # TOFIND: Why fields+many_to_many ?
-            # TOFIND: What is model_opts.fields ?
+            # Update new ModelResource with fields from Django
+            # model's metaclass (_meta.fields and _meta.many_to_many)
             new_class.fields.update(SortedDict(
                 (
                     (
+                        # 1st element of item tuples: field name
                         field.name,
+                        # 2nd element of item tuples : import
+                        # field, from the Django field
                         parse_field(field)
                     )
                     for field in sorted(
-                            model_opts.fields +
-                            model_opts.many_to_many
+                        model_opts.fields +
+                        model_opts.many_to_many
                     ) if
                     (
                         (
+                            # check that current field is not
+                            # present in ModelResource fields (if
+                            # defined)
                             opts.fields is None or
                             field.name in opts.fields
                         )
                         and
                         (
+                            # check that current field isn't
+                            # excluded by the ModelResource
                             opts.exclude is None or
                             field.name not in opts.exclude
                         )
                         and
                         (
+                            # check that current field isn't
+                            # already defined in the new
+                            # ModelResource, by
+                            # DeclarativeMetaclass for example
                             field.name not in new_class.fields
                         )
                     )
                 )
             ))
-            # add fields that follow relationships
-            # TOFIND: whats is opts.fields again ? how is it relevant here ?
+            # Update new ModelResource with relationship-spanning
+            # fields defined in ModelResource Meta options.
+            #
+            # Will not override fields that we got from the model
+            # metaclass (model_opts.fields and model_opts.many_to_many).
             if opts.fields is not None:
                 # temporary list to store Field objects, before sorting
                 # them and setting them on new_class
                 new_class.fields.update(SortedDict(
                     (
                         (
+                            # 1st element of item tuples : field name
                             field_name,
+                            # 2nd element of item tuples : import
+                            # field, from the last relationship in the
+                            # relationship-spanning field name
                             parse_field(
                                 _get_relationship_target_field(
                                     field_name,
@@ -544,9 +572,16 @@ class ModelDeclarativeMetaclass(DeclarativeMetaclass):
                                 field_name
                             )
                         )
+                        # iterate through ModelResource metaclass fields
                         for field_name in opts.fields if
                         (
+                            # check that field name is not defined
+                            # either by the Model's metaclass or
+                            # as attribute/property in the ModelResource
+                            # metaclass
                             field_name not in new_class.fields and
+                            # check that the field name actually spans
+                            # relationships
                             _field_name_follows_rel(field_name)
                         )
                     )

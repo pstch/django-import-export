@@ -11,12 +11,12 @@ INSTALLED_APPS = [
 
     'import_export',
 
-    'core',
+    'tests.core',
 ]
 
 SITE_ID = 1
 
-ROOT_URLCONF = "urls"
+ROOT_URLCONF = "tests.urls"
 
 DEBUG = True
 
